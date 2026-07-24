@@ -576,14 +576,6 @@ button:focus-visible {
   overflow: hidden;
 }
 
-.avatar-preview-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.28));
-}
-
 .home-avatar-image {
   width: 100%;
   height: 100%;
@@ -620,7 +612,6 @@ button:focus-visible {
 .avatar-options .avatar-selected {
   background: rgba(255, 205, 68, 0.16);
   border-color: #ffd04c;
-  box-shadow: 0 0 18px rgba(255, 200, 0, 0.45);
 }
 
 .pixel-art {

@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 const AVATARS = [
   {
     id: "bear",
     name: "Bear",
-    image:"/assets/avatars/bear_front.png",
+    image: "/assets/avatars/bear_front.png",
   },
   {
     id: "cat",
-    name: "Cat",
-    image: "/assets/avatars/cat_front.png",
+    name: "coming soon",
+    image: null,
   },
   {
-    id: "shark",
-    name: "Shark",
-    image: "/assets/avatars/shark_front.png",
+    id: "dog",
+    name: "coming soon",
+    image: null,
   },
 ];
 
@@ -44,35 +44,35 @@ const ART = {
   },
 };
 
-// const initialQuests = [
-//   {
-//     id: 1,
-//     title: "Assignment 1: Product Vision",
-//     course: "COMP 380",
-//     due: "Tomorrow",
-//     xp: 150,
-//     trophies: 35,
-//     completed: false,
-//   },
-//   {
-//     id: 2,
-//     title: "Assignment 2",
-//     course: "COMP 380",
-//     due: "Tonight",
-//     xp: 75,
-//     trophies: 20,
-//     completed: false,
-//   },
-//   {
-//     id: 3,
-//     title: "Project Proposal",
-//     course: "COMP 380",
-//     due: "Completed",
-//     xp: 100,
-//     trophies: 25,
-//     completed: true,
-//   },
-// ];
+const initialQuests = [
+  {
+    id: 1,
+    title: "Assignment 1: Product Vision",
+    course: "COMP 380",
+    due: "Tomorrow",
+    xp: 150,
+    trophies: 35,
+    completed: false,
+  },
+  {
+    id: 2,
+    title: "Assignment 2",
+    course: "COMP 380",
+    due: "Tonight",
+    xp: 75,
+    trophies: 20,
+    completed: false,
+  },
+  {
+    id: 3,
+    title: "Project Proposal",
+    course: "COMP 380",
+    due: "Completed",
+    xp: 100,
+    trophies: 25,
+    completed: true,
+  },
+];
 
 const arenas = [
   {
@@ -196,63 +196,19 @@ const shopItems = [
 
 function App() {
   const [activeTab, setActiveTab] = useState("home");
-  const [quests, setQuests] = useState([]);
-  const [questsLoading, setQuestsLoading] = useState(true);
-  const [questsError, setQuestsError] = useState("");
+  const [quests, setQuests] = useState(initialQuests);
   const [playerXP, setPlayerXP] = useState(450);
   const [trophies, setTrophies] = useState(875);
   const [selectedAvatarId, setSelectedAvatarId] = useState("bear");
   const selectedAvatar =
         AVATARS.find((avatar) => avatar.id === selectedAvatarId) ?? AVATARS[0];
-  const [ownedCosmetics, setOwnedCosmetics] = useState([]);
+  const [ownedCosmetics, setOwnedCosmetics] = useState([null]);
   const [equippedCosmetics, setEquippedCosmetics] = useState({
     accessory: null,
     hat: null,
     outfit: null,
     theme: null,
   });
-    useEffect(() => {
-    async function loadQuests() {
-      try {
-        setQuestsLoading(true);
-        setQuestsError("");
-
-        const response = await fetch(
-          "http://localhost:3001/api/v1/courses/101/assignments"
-        );
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const assignments = await response.json();
-
-        const formattedQuests = assignments.map((assignment) => ({
-          id: assignment.id,
-          title: assignment.name ?? assignment.title ?? "Untitled Assignment",
-          course: "COMP 380",
-          due: assignment.due_at ?? "No due date",
-          xp: assignment.points_possible ?? 0,
-          trophies: Math.max(
-            10,
-            Math.round((assignment.points_possible ?? 0) / 4)
-          ),
-          completed: false,
-        }));
-
-        setQuests(formattedQuests);
-        console.log("Formatted quests:", formattedQuests);
-      } catch (error) {
-        console.error("Failed to load quests:", error);
-        setQuestsError("Could not load quests from the backend.");
-      } finally {
-        setQuestsLoading(false);
-      }
-    }
-
-    loadQuests();
-  }, []);
-
   const [claimedRewards, setClaimedRewards] = useState([]);
   const [badges, setBadges] = useState([]);
   const [toast, setToast] = useState("");
@@ -429,7 +385,7 @@ function HomeScreen({ level, currentLevelXP, xpPerLevel, xpPercent, quests, comp
 </div>
         <div className="hero-content">
           <p className="eyebrow">{currentArena.name.toUpperCase()}</p>
-          <h2>COMP380Student </h2>
+          <h2>USERNAME HERE </h2>
           <p className="hero-description"> Level {level}</p>
           <div className="xp-row"><span>{currentLevelXP} / {xpPerLevel} XP</span><span>Level {level + 1}</span></div>
           <div className="xp-track"><div className="xp-fill" style={{ width: `${xpPercent}%` }} /></div>
@@ -531,7 +487,7 @@ function AvatarScreen({
   return (
     <section className="panel-page">
       <p className="eyebrow">CUSTOMIZATION</p>
-      <h2>Choose Your Avatar</h2>
+      <h2>Choose Your Adventurer</h2>
 
       <div className="avatar-preview">
         {selectedAvatar.image ? (
