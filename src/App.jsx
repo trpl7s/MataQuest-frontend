@@ -20,23 +20,24 @@ const AVATARS = [
 ];
 
 const ART = {
-  logo: null,
+  logo: "/assets/ui/mataquestLOGO.png",
   avatars: {
     bear: null,
     cat: null,
-    dog: null,
+    shark: null,
   },
   arenas: {
-    starter: null,
+    starter: "assets/arenas/monty.png",
     midterm: null,
     finals: null,
   },
   rewards: {
-    starterChest: null,
-    studyBoost: null,
-    rareChest: null,
-    focusBadge: null,
-    finalsChest: null,
+    starterChest: "/assets/rewards/starterchest.png",
+    UncommonChest: "/assets/rewards/uncommonchest.png",
+    studyBoost: "/assets/rewards/studyboost.png",
+    rareChest: "/assets/rewards/rarechest.png",
+    focusBadge: "/assets/rewards/profilebadge.png",
+    finalsChest: "/assets/rewards/finalschest.png",
   },
   cosmetics: {
     knightHelmet: null,
@@ -114,7 +115,7 @@ const roadRewards = [
     arena: "starter",
     type: "chest",
     title: "Starter Chest",
-    description: "A small collection of early-semester supplies.",
+    description: "A common chest.",
     reward: { trophies: 40 },
     art: ART.rewards.starterChest,
   },
@@ -139,14 +140,14 @@ const roadRewards = [
     art: ART.rewards.studyBoost,
   },
   {
-    id: "common chest",
+    id: "uncommon chest",
     threshold: 1000,
     arena: "midterm",
     type: "chest",
-    title: "Common Chest",
-    description: "A trophy reward for reaching midterm season.",
+    title: "Uncommon Chest",
+    description: "An uncommon chest for reaching midterm season.",
     reward: { trophies: 75 },
-    art: ART.rewards.starterChest,
+    art: ART.rewards.UncommonChest,
   },
   
   {
@@ -343,27 +344,50 @@ function App() {
     <div className="app-shell">
       {toast && <div className="toast" role="status">{toast}</div>}
 
-      <header className="top-bar">
-        <div>
-          <h1>MataQUEST</h1>
-        </div>
-        <div className="currency-panel">
-          <div className="currency"><span></span><strong>{trophies}</strong></div>
-          <div className="currency"><span></span><strong>{playerXP} XP</strong></div>
-        </div>
-      </header>
+      <header className="game-header">
+  <div className="brand-block">
+    <img
+      src={ART.logo}
+      alt="MataQUEST"
+      className="mataquest-logo"
+    />
+  </div>
+
+  <div className="resource-bar">
+    <div className="resource-pill">
+      <span className="resource-icon">TROPHIES </span>
+      <strong>{trophies}</strong>
+    </div>
+
+    <div className="resource-pill">
+      <span className="resource-icon">XP </span>
+      <strong>{playerXP} XP</strong>
+    </div>
+
+    <div className="resource-pill">
+      <span className="resource-icon">STREAK </span>
+      <strong>NULL Days</strong>
+    </div>
+  </div>
+</header>
 
       <main>
         {activeTab === "home" && (
           <HomeScreen
-            level={level}
-            currentLevelXP={currentLevelXP}
-            xpPerLevel={xpPerLevel}
-            xpPercent={xpPercent}
-            quests={quests}
-            completeQuest={completeQuest}
-            selectedAvatar={selectedAvatar}
-            currentArena={currentArena}
+          level={level}
+          currentLevelXP={currentLevelXP}
+          xpPerLevel={xpPerLevel}
+          xpPercent={xpPercent}
+          quests={quests}
+          questsLoading={questsLoading}
+          questsError={questsError}
+          completeQuest={completeQuest}
+          selectedAvatar={selectedAvatar}
+          currentArena={currentArena}
+          trophies={trophies}
+          onOpenRoad={() => setActiveTab("road")}
+          onOpenAvatar={() => setActiveTab("avatar")}
+          onOpenShop={() => setActiveTab("shop")}
           />
         )}
 
@@ -374,6 +398,7 @@ function App() {
             currentArena={currentArena}
             claimedRewards={claimedRewards}
             onClaim={claimRoadReward}
+
           />
         )}
 
@@ -413,48 +438,254 @@ function ArtSlot({ src, label, className = "" }) {
   return <div className={`art-slot art-placeholder ${className}`} aria-label={`${label} placeholder`}><span>{label}</span></div>;
 }
 
-function HomeScreen({ level, currentLevelXP, xpPerLevel, xpPercent, quests, completeQuest, selectedAvatar, currentArena }) {
+function HomeScreen({
+  level,
+  currentLevelXP,
+  xpPerLevel,
+  xpPercent,
+  quests,
+  questsLoading,
+  questsError,
+  completeQuest,
+  selectedAvatar,
+  currentArena,
+  trophies,
+  onOpenRoad,
+  onOpenAvatar,
+  onOpenShop,
+}) {
   const remainingQuests = quests.filter((quest) => !quest.completed).length;
-  const avatarEmoji = { bear: "", cat: "", dog: "" }[selectedAvatar];
+  const completedQuests = quests.length - remainingQuests;
+
+  const nextArena = arenas.find((arena) => arena.min > trophies);
+
+  const arenaStart = currentArena.min;
+  const arenaEnd =
+    currentArena.max === Infinity
+      ? currentArena.min + 1000
+      : currentArena.max + 1;
+
+  const arenaProgress = Math.min(
+    Math.max(
+      ((trophies - arenaStart) / (arenaEnd - arenaStart)) * 100,
+      0
+    ),
+    100
+  );
+
+  const nextReward = roadRewards.find(
+    (reward) => reward.threshold > trophies
+  );
 
   return (
-    <div className="home-grid">
-      <section className="hero-card">
-        <div className="avatar-circle">
-  <img
-    src={selectedAvatar.image}
-    alt={`${selectedAvatar.name} avatar`}
-    className="home-avatar-image pixel-art"
-  />
-</div>
-        <div className="hero-content">
-          <p className="eyebrow">{currentArena.name.toUpperCase()}</p>
-          <h2>COMP380Student </h2>
-          <p className="hero-description"> Level {level}</p>
-          <div className="xp-row"><span>{currentLevelXP} / {xpPerLevel} XP</span><span>Level {level + 1}</span></div>
-          <div className="xp-track"><div className="xp-fill" style={{ width: `${xpPercent}%` }} /></div>
+    <div className="game-home">
+      <aside className="home-side-panel home-profile-panel">
+        <button
+          className="player-profile-card"
+          type="button"
+          onClick={onOpenAvatar}
+        >
+          <div className="profile-avatar">
+            <img
+              src={selectedAvatar.image}
+              alt={`${selectedAvatar.name} avatar`}
+              className="home-avatar-image pixel-art"
+            />
+          </div>
+
+          <div>
+            <span className="home-label">PLAYER PROFILE</span>
+            <h2>COMP380Student</h2>
+            <p>Level {level}</p>
+          </div>
+        </button>
+
+        <div className="home-xp-card">
+          <div className="xp-row">
+            <span>Level {level}</span>
+            <span>Level {level + 1}</span>
+          </div>
+
+          <div className="xp-track">
+            <div
+              className="xp-fill"
+              style={{ width: `${xpPercent}%` }}
+            />
+          </div>
+
+          <strong>
+            {currentLevelXP} / {xpPerLevel} XP
+          </strong>
         </div>
+
+        <div className="home-mini-stats">
+          <StatCard
+            icon="ICON"
+            value={remainingQuests}
+            label="Active"
+          />
+
+          <StatCard
+            icon="ICON"
+            value={completedQuests}
+            label="Completed"
+          />
+
+          <StatCard
+            icon="ICON"
+            value="3"
+            label="Streak"
+          />
+        </div>
+      </aside>
+
+      <section className="home-arena-column">
+        <button
+          className={`home-arena-card arena-${currentArena.theme}`}
+          type="button"
+          onClick={onOpenRoad}
+        >
+          <div className="home-arena-heading">
+            <div>
+              <span className="home-label">CURRENT ARENA</span>
+              <h2>{currentArena.name}</h2>
+              <p>{currentArena.subtitle}</p>
+            </div>
+
+            <span className="arena-number-badge">
+              ARENA {arenas.indexOf(currentArena) + 1}
+            </span>
+          </div>
+
+          <div className="arena-stage">
+            {currentArena.art ? (
+              <img
+                src={currentArena.art}
+                alt={currentArena.name}
+                className="home-arena-image"
+              />
+            ) : (
+              <div className="arena-stage-placeholder">
+                <span></span>
+                <strong>{currentArena.name}</strong>
+                <small>ADD ARENA ARTWORK HERE</small>
+              </div>
+            )}
+          </div>
+
+          <div className="home-arena-progress">
+            <div className="arena-progress-copy">
+              <span>TROPHI8ES {trophies}</span>
+
+              <span>
+                {nextArena
+                  ? `${nextArena.min - trophies} until ${nextArena.name}`
+                  : "Final arena reached"}
+              </span>
+            </div>
+
+            <div className="arena-progress-track">
+              <div
+                className="arena-progress-fill"
+                style={{ width: `${arenaProgress}%` }}
+              />
+            </div>
+          </div>
+
+          <span className="open-road-label">
+            Open Trophy Road →
+          </span>
+        </button>
+
+        <section className="home-quest-preview">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">CANVAS QUEST LOG</p>
+              <h2>Today’s Quests</h2>
+            </div>
+
+            <span className="quest-count">
+              {remainingQuests} remaining
+            </span>
+          </div>
+
+          {questsLoading && (
+            <p className="home-status-message">
+              Loading quests...
+            </p>
+          )}
+
+          {questsError && (
+            <p className="home-status-message home-error-message">
+              {questsError}
+            </p>
+          )}
+
+          {!questsLoading && !questsError && (
+            <div className="quest-list">
+              {quests.slice(0, 3).map((quest) => (
+                <QuestCard
+                  key={quest.id}
+                  quest={quest}
+                  onComplete={completeQuest}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </section>
 
-      <section className="stat-grid">
-        <StatCard icon="" value={remainingQuests} label="Active Quests" />
-        <StatCard icon="" value={quests.length - remainingQuests} label="Completed" />
-        <StatCard icon="" value="3" label="Day Streak" />
-      </section>
+      <aside className="home-side-panel home-actions-panel">
+        <div className="next-reward-card">
+          <span className="home-label">NEXT REWARD</span>
 
-      <section className="quest-section">
-        <div className="section-heading">
-          <div><p className="eyebrow">CANVAS QUEST LOG</p><h2>Today’s Quests</h2></div>
-          <span className="quest-count">{remainingQuests} remaining</span>
+          {nextReward ? (
+            <>
+              <ArtSlot
+                src={nextReward.art}
+                label={nextReward.title}
+                className="next-reward-art"
+              />
+
+              <h3>{nextReward.title}</h3>
+              <p>
+                Unlocks at {nextReward.threshold} trophies
+              </p>
+
+              <strong>
+                {nextReward.threshold - trophies} trophies away
+              </strong>
+            </>
+          ) : (
+            <>
+              <h3>Road Complete</h3>
+              <p>You reached every current milestone.</p>
+            </>
+          )}
         </div>
-        <div className="quest-list">
-          {quests.map((quest) => <QuestCard key={quest.id} quest={quest} onComplete={completeQuest} />)}
+
+        <div className="weekly-challenge-card">
+          <span className="home-label">WEEKLY CHALLENGE</span>
+          <h3>Complete 5 Quests</h3>
+
+          <div className="challenge-progress-track">
+            <div
+              className="challenge-progress-fill"
+              style={{
+                width: `${Math.min(
+                  (completedQuests / 5) * 100,
+                  100
+                )}%`,
+              }}
+            />
+          </div>
+
+          <p>{Math.min(completedQuests, 5)} / 5 complete</p>
         </div>
-      </section>
+      </aside>
     </div>
   );
 }
-
 function QuestCard({ quest, onComplete }) {
   return (
     <article className={`quest-card ${quest.completed ? "quest-completed" : ""}`}>
@@ -466,51 +697,145 @@ function QuestCard({ quest, onComplete }) {
   );
 }
 
-function TrophyRoad({ trophies, currentArena, claimedRewards, onClaim }) {
+function TrophyRoad({
+  trophies,
+  currentArena,
+  claimedRewards,
+  onClaim,
+}) {
   const nextArena = arenas.find((arena) => arena.min > trophies);
+  const [openingChest, setOpeningChest] = useState(null);
+
+  function handleChestClick(reward) {
+    if (openingChest) return;
+
+    setOpeningChest(reward.id);
+
+    setTimeout(() => {
+      onClaim(reward);
+      setOpeningChest(null);
+    }, 1800);
+  }
 
   return (
     <section className="panel-page trophy-page">
       <div className="road-header">
-        <div><p className="eyebrow">SEMESTER PROGRESSION</p><h2>Trophy Road</h2><p className="page-description">Advance throughout three arenas  your academic journey. Milestones require consistent coursework, will you make it to the end?</p></div>
-        <div className="road-balance"><span>YOUR TROPHIES</span><strong> {trophies}</strong></div>
+        <div>
+          <p className="eyebrow">SEMESTER PROGRESSION</p>
+          <h2>Trophy Road</h2>
+          <p className="page-description">
+            Advance through three arenas during your academic journey.
+            Milestones require consistent coursework. Will you make it to
+            the end?
+          </p>
+        </div>
+
+        <div className="road-balance">
+          <span>YOUR TROPHIES</span>
+          <strong>{trophies}</strong>
+        </div>
       </div>
 
       <div className="arena-grid">
-        {arenas.map((arena) => (
-          <article className={`arena-card arena-${arena.theme} ${arena.id === currentArena.id ? "arena-current" : ""}`} key={arena.id}>
-            <span className="arena-number">ARENA {arenas.indexOf(arena) + 1}</span>
+        {arenas.map((arena, index) => (
+          <article
+            className={`arena-card arena-${arena.theme} ${
+              arena.id === currentArena.id ? "arena-current" : ""
+            }`}
+            key={arena.id}
+          >
+            <span className="arena-number">ARENA {index + 1}</span>
             <h3>{arena.name}</h3>
-            <ArtSlot src={arena.art} label={`${arena.name} art`} className="arena-art" />
-            <strong> {arena.range}</strong>
+
+            <ArtSlot
+              src={arena.art}
+              label={`${arena.name} art`}
+              className="arena-art"
+            />
+
+            <strong>{arena.range}</strong>
             <p>{arena.subtitle}</p>
           </article>
         ))}
       </div>
 
       <div className="current-arena-banner">
-        <div><span>CURRENT ARENA</span><h3>{currentArena.name}</h3></div>
-        <div>{nextArena ? <><span>NEXT ARENA</span><strong>{Math.max(nextArena.min - trophies, 0)} trophies away</strong></> : <><span>FINAL ARENA</span><strong>Keep climbing</strong></>}</div>
+        <div>
+          <span>CURRENT ARENA</span>
+          <h3>{currentArena.name}</h3>
+        </div>
+
+        <div>
+          {nextArena ? (
+            <>
+              <span>NEXT ARENA</span>
+              <strong>
+                {Math.max(nextArena.min - trophies, 0)} trophies away
+              </strong>
+            </>
+          ) : (
+            <>
+              <span>FINAL ARENA</span>
+              <strong>Keep climbing</strong>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="reward-road">
         <div className="road-line" />
+
         {roadRewards.map((reward, index) => {
           const available = trophies >= reward.threshold;
           const claimed = claimedRewards.includes(reward.id);
+          const isOpening = openingChest === reward.id;
+
           return (
-            <article className={`reward-stop ${index % 2 ? "reward-right" : "reward-left"} ${available ? "reward-available" : ""} ${claimed ? "reward-claimed" : ""}`} key={reward.id}>
-              <div className="floating-island">
-                <ArtSlot src={reward.art} label={reward.title} className="reward-art" />
+            <article
+              key={reward.id}
+              className={`reward-stop ${
+                index % 2 ? "reward-right" : "reward-left"
+              } ${available ? "reward-available" : ""} ${
+                claimed ? "reward-claimed" : ""
+              }`}
+            >
+              <div
+                className={`floating-island ${
+                  isOpening ? "chest-opening" : ""
+                }`}
+              >
+                {isOpening && <div className="reward-burst" />}
+
+                <ArtSlot
+                  src={reward.art}
+                  label={reward.title}
+                  className="reward-art"
+                />
               </div>
+
               <div className="reward-copy">
                 <span className="reward-type">{reward.type}</span>
                 <h3>{reward.title}</h3>
                 <p>{reward.description}</p>
-                <strong> {reward.threshold}</strong>
-                <button disabled={!available || claimed} onClick={() => onClaim(reward)}>{claimed ? "Claimed" : available ? "Claim Reward" : "Locked"}</button>
+                <strong>{reward.threshold} trophies</strong>
+
+                <button
+                  disabled={!available || claimed || isOpening}
+                  onClick={() => handleChestClick(reward)}
+                >
+                  {claimed
+                    ? "Claimed"
+                    : isOpening
+                      ? "Opening..."
+                      : available
+                        ? "Claim Reward"
+                        : "Locked"}
+                </button>
               </div>
-              <div className="road-node">{claimed ? "✓" : available ? "!" : "🔒"}</div>
+
+              <div className="road-node">
+                {claimed ? "✓" : available ? "!" : "🔒"}
+              </div>
             </article>
           );
         })}
