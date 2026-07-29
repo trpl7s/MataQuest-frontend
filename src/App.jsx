@@ -27,7 +27,7 @@ const ART = {
     shark: null,
   },
   arenas: {
-    starter: "assets/arenas/monty.png",
+    starter: "assets/arenas/TESTARENA.PNG",
     midterm: null,
     finals: null,
   },
@@ -540,40 +540,64 @@ function HomeScreen({
       </aside>
 
       <section className="home-arena-column">
-        <button
-          className={`home-arena-card arena-${currentArena.theme}`}
-          type="button"
-          onClick={onOpenRoad}
-        >
-          <div className="home-arena-heading">
-            <div>
-              <span className="home-label">CURRENT ARENA</span>
-              <h2>{currentArena.name}</h2>
-              <p>{currentArena.subtitle}</p>
-            </div>
-
-            <span className="arena-number-badge">
-              ARENA {arenas.indexOf(currentArena) + 1}
-            </span>
-          </div>
-
+        <section className={`home-arena-card arena-${currentArena.theme}`}>
           <div className="arena-stage">
-            {currentArena.art ? (
-              <img
-                src={currentArena.art}
-                alt={currentArena.name}
-                className="home-arena-image"
-              />
-            ) : (
-              <div className="arena-stage-placeholder">
-                <span></span>
-                <strong>{currentArena.name}</strong>
-                <small>ADD ARENA ARTWORK HERE</small>
-              </div>
-            )}
-          </div>
 
-          <div className="home-arena-progress">
+  {currentArena.art ? (
+  <button
+    className="arena-image-button"
+    type="button"
+    onClick={onOpenRoad}
+    aria-label={`Open ${currentArena.name} Trophy Road`}
+  >
+    <img
+      src={currentArena.art}
+      alt={currentArena.name}
+      className="home-arena-image"
+    />
+  </button>
+) : (
+  <div className="arena-stage-placeholder">
+    <span></span>
+    <strong>{currentArena.name}</strong>
+    <small>Add arena artwork here</small>
+  </div>
+)}
+
+</div>
+{/* <div className="arena-title-block">
+
+    <h2>{currentArena.name}</h2>
+
+    <div className="arena-reward-preview">
+
+      <span className="arena-reward-label">
+        NEXT REWARD
+      </span>
+
+      {nextReward && (
+        <>
+          <img
+            src={nextReward.art}
+            alt={nextReward.title}
+            className="arena-next-reward-image"
+          />
+
+          <strong>{nextReward.title}</strong>
+
+          <span>
+            {nextReward.threshold - trophies}
+            {" "}
+            trophies away
+          </span>
+        </>
+      )}
+
+    </div>
+
+</div> */}
+
+<div className="home-arena-progress">
             <div className="arena-progress-copy">
               <span>TROPHI8ES {trophies}</span>
 
@@ -592,10 +616,7 @@ function HomeScreen({
             </div>
           </div>
 
-          <span className="open-road-label">
-            Open Trophy Road →
-          </span>
-        </button>
+        </section>
 
         <section className="home-quest-preview">
           <div className="section-heading">
@@ -689,7 +710,7 @@ function HomeScreen({
 function QuestCard({ quest, onComplete }) {
   return (
     <article className={`quest-card ${quest.completed ? "quest-completed" : ""}`}>
-      <div className="quest-icon">{quest.completed ? "✅" : "-"}</div>
+      <div className="quest-icon">{quest.completed ? "-" : "-"}</div>
       <div className="quest-info"><span className="course-tag">{quest.course}</span><h3>{quest.title}</h3><p>Due: {quest.due}</p></div>
       <div className="reward-panel"><span> +{quest.xp}</span><span> +{quest.trophies}</span></div>
       <button className="complete-button" disabled={quest.completed} onClick={() => onComplete(quest.id)}>{quest.completed ? "Quest Complete" : "Complete Quest"}</button>

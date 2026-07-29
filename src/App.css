@@ -30,8 +30,10 @@ button:focus-visible {
   width: min(1180px, calc(100% - 32px));
   min-height: 100vh;
   margin: 0 auto;
-   padding-bottom: 110px;
+  padding-bottom: 110px
 }
+
+/*header  */
 
 .game-header {
   display: flex;
@@ -42,7 +44,6 @@ button:focus-visible {
   min-height: 96px;
   padding: 14px 22px;
 
-  border-radius: 22px;
   background:
     linear-gradient(
       135deg,
@@ -51,18 +52,60 @@ button:focus-visible {
     );
 
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
 .mataquest-logo {
-  width: 220px;
+  display: block;
+  width: clamp(190px, 18vw, 250px);
+  height: auto;
 }
 
-.brand-block h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 4rem);
-  line-height: 0.95;
+.brand-block {
+  display: grid;
+  gap: 6px;
 }
+
+.season-label {
+  color: #ffca48;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.resource-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resource-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 120px;
+  padding: 12px 16px;
+
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.resource-pill strong {
+  color: white;
+  font-size: 1rem;
+}
+
+.resource-icon {
+  font-size: 1.25rem;
+}
+
 .game-home {
   display: grid;
   grid-template-columns:
@@ -265,46 +308,171 @@ box-shadow:none;
 }
 
 .arena-stage {
+  display: grid;
+  place-items: center;
+
+  min-height: 470px;
+  margin: 12px 0 28px;
+
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.arena-image-button {
   position: relative;
   display: grid;
   place-items: center;
 
-  min-height: 400px;
-  margin: 18px 0 95px;
+  width: 100%;
+  min-height: 440px;
 
-  overflow: hidden;
-  border-radius: 24px;
-  background: #16090b;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+
+  cursor: pointer;
+  overflow: visible;
 }
 
 .home-arena-image {
-  width: 100%;
-  height: 400px;
-  max-height: none;
-
-  object-fit: cover;
+  width: 60%;
+  height: 90%;
+  object-fit: fill;
   object-position: center;
+  transition:
+    transform 300ms ease,
+    filter 300ms ease;
+animation:
+arenaFloat 4s ease-in-out infinite,
+arenaPulse 2.8s ease-in-out infinite;
+}
+
+
+@keyframes arenaPulse{
+
+0%,100%{
+
+filter:
+drop-shadow(0 20px 25px rgba(0,0,0,.45));
+
+}
+
+50%{
+
+filter:
+drop-shadow(0 26px 32px rgba(0,0,0,.55))
+drop-shadow(0 0 14px rgba(255,210,60,.32));
+
+}
+
+}
+
+@keyframes arenaFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+
+
+.arena-image-button:active .home-arena-image {
+  transform: scale(0.98);
+}
+
+
+
+@keyframes arenaGlow {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.arena-title-block {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+
+  margin-top: -28px;
+  margin-bottom: 105px;
+
+  text-align: center;
+}
+
+.arena-title-block h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 900;
+}
+
+.arena-reward-preview {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+
+  width: 180px;
+  margin-top: 6px;
+
+  text-align: center;
+}
+
+.arena-reward-label {
+  color: #ffd34d;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.arena-next-reward-image {
+  display: block;
+
+  width: 86px;
+  height: 86px;
+
+  object-fit: contain;
 
   filter:
-    saturate(1.05)
-    contrast(1.06)
-    brightness(0.88);
+    drop-shadow(0 10px 12px rgba(0, 0, 0, 0.48))
+    drop-shadow(0 0 10px rgba(255, 205, 70, 0.2));
+
+  animation: rewardBob 2.4s ease-in-out infinite;
 }
 
-.arena-stage::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-
-  background:
-    linear-gradient(
-      180deg,
-      transparent 45%,
-      rgba(10, 3, 5, 0.84) 100%
-    );
-
-  pointer-events: none;
+.arena-reward-preview strong {
+  font-size: 1rem;
 }
+
+.arena-reward-preview > span:last-child {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.78rem;
+}
+
+@keyframes rewardBob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -6px;
+  }
+}
+
 
 .arena-stage-placeholder {
   display: grid;
@@ -353,13 +521,6 @@ box-shadow:none;
   backdrop-filter: blur(10px);
 }
 
-.home-arena-card:hover {
-  transform: translateY(-5px) scale(1.01);
-  border-color: rgba(255, 211, 76, 0.55);
-  box-shadow:
-    0 30px 70px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(255, 185, 45, 0.14);
-}
 
 .arena-progress-copy {
   display: flex;
@@ -385,17 +546,6 @@ box-shadow:none;
   background: linear-gradient(90deg, #45b8ff, #8d65ff);
   border-radius: inherit;
   transition: width 350ms ease;
-}
-
-.open-road-label {
-  display: block;
-  margin-top: 15px;
-  color: #ffd862;
-  font-size: 0.83rem;
-  font-weight: 900;
-  text-align: center;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .home-quest-preview {
@@ -519,14 +669,55 @@ box-shadow:none;
   border: 1px solid rgba(255, 100, 100, 0.24);
 }
 
+.bottom-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(46, 42, 42, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.4);
+  transform: translateX(-50%);
+  backdrop-filter: blur(18px);
+}
+
+.nav-button {
+  display: grid;
+  gap: 3px;
+  min-width: 78px;
+  padding: 9px 14px;
+  color: #ffffff;
+  background: transparent;
+  border: 0;
+  border-radius: 13px;
+  cursor: pointer;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.nav-button span {
+  font-size: 1.25rem;
+}
+
+.nav-active {
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  font-weight: 800;
+}
+
 @media (max-width: 1050px) {
   .game-home {
     grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .home-actions-panel {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, 1fr);
   }
 
   .next-reward-card {
@@ -582,23 +773,6 @@ box-shadow:none;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.resource-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 120px;
-  padding: 12px 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.resource-pill strong {
-  color: white;
-  font-size: 1rem;
 }
 
 .resource-icon {
@@ -779,78 +953,79 @@ box-shadow:none;
   cursor: not-allowed;
 }
 
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
+/* =========================
+   HEADER
+========================= */
 
+.game-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  min-height: 96px;
+  padding: 14px 22px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(132, 12, 20, 0.98),
+      rgba(35, 3, 8, 0.98)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.mataquest-logo {
+  display: block;
+  width: clamp(190px, 18vw, 250px);
+  height: auto;
+}
+
+.brand-block {
+  display: grid;
+  gap: 6px;
+}
+
+.season-label {
+  color: #ffca48;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.resource-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resource-pill {
+  display: flex;
+  align-items: center;
   gap: 10px;
 
-  width: 100%;
-  min-height: 76px;
-  padding: 10px 20px;
+  min-width: 120px;
+  padding: 12px 16px;
 
-  background:
-    linear-gradient(
-      180deg,
-      rgba(31, 25, 34, 0.98),
-      rgba(15, 11, 18, 0.99)
-    );
-
-  border-top: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.nav-button {
-  display: grid;
-  place-items: center;
-  gap: 3px;
-
-  min-width: 105px;
-  padding: 11px 18px;
-
-  color: rgba(255, 255, 255, 0.72);
-  font-weight: 700;
-
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 15px;
-
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.nav-button:hover {
+.resource-pill strong {
   color: white;
-  background: rgba(255, 255, 255, 0.07);
-  transform: translateY(-2px);
+  font-size: 1rem;
 }
 
-.nav-button span {
-  font-size: 1.2rem;
-}
-
-.nav-active {
-  color: white;
-  font-weight: 900;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 190, 54, 0.2),
-      rgba(255, 120, 35, 0.08)
-    );
-  border-color: rgba(255, 205, 80, 0.25);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 20px rgba(0, 0, 0, 0.24);
+.resource-icon {
+  font-size: 1.25rem;
 }
 
 
@@ -1327,10 +1502,6 @@ transform:scale(1.8);
     flex-direction: column;
   }
 
-  .avatar-circle {
-    margin: 0 auto;
-  }
-
   .stat-grid,
   .shop-grid {
     grid-template-columns: 1fr;
@@ -1347,12 +1518,22 @@ transform:scale(1.8);
 }
 
 @media (max-width:560px) {
+  .bottom-nav {
+    width: calc(100% - 20px);
+    justify-content: space-between;
+  }
+
+  .nav-button {
+    min-width: auto;
+    padding: 9px 10px;
+    font-size: 0.7rem;
+  }
+
   .app-shell {
     width: min(100% - 20px, 1180px);
     padding-top: 18px;
   }
 
-  .hero-card,
   .quest-section,
   .panel-page {
     padding: 20px;
@@ -1366,16 +1547,5 @@ transform:scale(1.8);
   .reward-right {
     grid-template-columns: 1fr;
     margin-left: 35px;
-  }
-
-  .bottom-nav {
-    width: calc(100% - 20px);
-    justify-content: space-between;
-  }
-
-  .nav-button {
-    min-width: auto;
-    padding: 9px 10px;
-    font-size: .7rem;
   }
 }
