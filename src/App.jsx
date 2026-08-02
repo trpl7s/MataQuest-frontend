@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import TrophyRoad from "./components/TrophyRoad/TrophyRoad";
 
 const AVATARS = [
   {
@@ -344,6 +345,8 @@ function App() {
     <div className="app-shell">
       {toast && <div className="toast" role="status">{toast}</div>}
 
+
+      {activeTab !== "road" && (
       <header className="game-header">
   <div className="brand-block">
     <img
@@ -365,7 +368,7 @@ function App() {
     </div>
   </div>
 </header>
-
+      )}
       <main>
         {activeTab === "home" && (
           <HomeScreen
@@ -386,14 +389,15 @@ function App() {
           />
         )}
 
-        {activeTab === "road" && (
+                {activeTab === "road" && (
           <TrophyRoad
             trophies={trophies}
-            playerXP={playerXP}
             currentArena={currentArena}
+            arenas={arenas}
+            rewards={roadRewards}
             claimedRewards={claimedRewards}
             onClaim={claimRoadReward}
-
+            onClose={() => setActiveTab("home")}
           />
         )}
 
@@ -417,13 +421,13 @@ function App() {
           />
         )}
       </main>
-
+      {activeTab !== "road" && (
       <nav className="bottom-nav" aria-label="Main navigation">
         <NavButton icon="" label="Home" active={activeTab === "home"} onClick={() => setActiveTab("home")} />
-        <NavButton icon="" label="Road" active={activeTab === "road"} onClick={() => setActiveTab("road")} />
         <NavButton icon="" label="Avatar" active={activeTab === "avatar"} onClick={() => setActiveTab("avatar")} />
         <NavButton icon="" label="Shop" active={activeTab === "shop"} onClick={() => setActiveTab("shop")} />
       </nav>
+      )}
     </div>
   );
 }
@@ -713,7 +717,7 @@ function QuestCard({ quest, onComplete }) {
   );
 }
 
-function TrophyRoad({
+function TrophyRoadOld({
   trophies,
   currentArena,
   claimedRewards,
