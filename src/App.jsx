@@ -360,13 +360,8 @@ function App() {
     </div>
 
     <div className="resource-pill">
-      <span className="resource-icon">XP </span>
-      <strong>{playerXP} XP</strong>
-    </div>
-
-    <div className="resource-pill">
-      <span className="resource-icon">STREAK </span>
-      <strong>NULL Days</strong>
+      <span className="resource-icon">COINS </span>
+      <strong>999999</strong>
     </div>
   </div>
 </header>
@@ -494,9 +489,9 @@ function HomeScreen({
           </div>
 
           <div>
-            <span className="home-label">PLAYER PROFILE</span>
+            {/* { <span className="home-label">PLAYER PROFILE</span> */}
             <h2>COMP380Student</h2>
-            <p>Level {level}</p>
+            {/* <p>Level {level}</p> */}
           </div>
         </button>
 
@@ -679,7 +674,7 @@ function HomeScreen({
             </>
           ) : (
             <>
-              <h3>Road Complete</h3>
+              <h3>Trophy road is complete</h3>
               <p>You reached every current milestone.</p>
             </>
           )}
