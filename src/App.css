@@ -83,18 +83,14 @@ button:focus-visible {
   gap: 12px;
 }
 
-.resource-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.resource-pill{
 
-  min-width: 120px;
-  padding: 12px 16px;
+min-width:185px;
 
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+padding:14px 18px;
+
+gap:14px;
+
 }
 
 .resource-pill strong {
@@ -104,6 +100,53 @@ button:focus-visible {
 
 .resource-icon {
   font-size: 1.25rem;
+}
+
+.coin-icon{
+
+width:52px;
+height:52px;
+
+flex-shrink:0;
+
+image-rendering:pixelated;
+image-rendering:crisp-edges;
+
+filter:
+drop-shadow(0 3px 3px rgba(0,0,0,.35));
+
+}
+
+.resource-pill-coins {
+  position: relative;
+  min-width: 190px;
+  padding: 16px 20px 16px 58px;
+}
+
+.resource-edge-icon {
+  position: absolute;
+  top: 49%;
+  left: -24px;
+
+  width: 62px;
+  height: 62px;
+
+  object-fit: contain;
+  flex-shrink: 0;
+
+  transform: translateY(-50%);
+
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+
+  filter:
+    drop-shadow(0 4px 4px rgba(0, 0, 0, 0.45));
+}
+
+.resource-pill-coins strong {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 .game-home {
@@ -1547,5 +1590,251 @@ transform:scale(1.8);
   .reward-right {
     grid-template-columns: 1fr;
     margin-left: 35px;
+  }
+}
+
+/* =========================
+   REWARD REVEAL
+========================= */
+
+.reward-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background: rgba(3, 7, 20, 0.88);
+  backdrop-filter: blur(10px);
+
+  animation: rewardOverlayEnter 220ms ease-out both;
+}
+
+.reward-reveal-panel {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+
+  width: min(460px, 100%);
+  padding: 36px 28px;
+
+  color: white;
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(70, 159, 255, 0.32),
+      transparent 48%
+    ),
+    linear-gradient(180deg, #163f83, #071c43);
+
+  border: 4px solid #3e8fe1;
+  border-radius: 26px;
+
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.18),
+    0 30px 80px rgba(0, 0, 0, 0.65);
+
+  animation: rewardPanelEnter 300ms
+    cubic-bezier(0.2, 0.8, 0.2, 1)
+    both;
+}
+
+.reward-reveal-label {
+  margin: 0;
+
+  color: #ffe56a;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.reward-opening-chest,
+.reward-opened-art {
+  display: block;
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 18px 16px rgba(0, 0, 0, 0.5));
+}
+
+.reward-opening-chest {
+  animation:
+    rewardChestShake 180ms linear 4,
+    rewardChestFloat 1.4s ease-in-out;
+}
+
+.reward-reveal-panel h2 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.revealed-reward-values {
+  display: grid;
+  gap: 8px;
+
+  color: #ffe67b;
+  font-size: 1.15rem;
+}
+
+.reward-reveal-panel button {
+  min-width: 210px;
+  margin-top: 10px;
+  padding: 14px 24px;
+
+  color: white;
+  font-weight: 900;
+
+  background: linear-gradient(180deg, #50c5ff, #087de5);
+  border: 4px solid #0756ad;
+  border-radius: 14px;
+
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.32),
+    0 6px 0 #043b81;
+
+  cursor: pointer;
+}
+
+@keyframes rewardOverlayEnter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rewardPanelEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rewardChestShake {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+
+  25% {
+    transform: rotate(-5deg);
+  }
+
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes rewardChestFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -14px;
+  }
+}
+
+.reward-chest-button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.reward-chest-button:disabled {
+  cursor: default;
+}
+
+.reward-opening-chest {
+  display: block;
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 18px 16px rgba(0, 0, 0, 0.5));
+
+  animation: rewardChestIdle 2s ease-in-out infinite;
+
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.reward-chest-button:not(:disabled):hover
+  .reward-opening-chest {
+  transform: scale(1.08);
+
+  filter:
+    drop-shadow(0 22px 18px rgba(0, 0, 0, 0.55))
+}
+
+.reward-opening-chest.is-opening {
+  animation:
+    rewardChestShake 120ms linear 6,
+    rewardChestPop 1.2s ease forwards;
+}
+
+.reward-open-instruction {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+}
+
+@keyframes rewardChestIdle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes rewardChestShake {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+
+  25% {
+    rotate: -5deg;
+  }
+
+  75% {
+    rotate: 5deg;
+  }
+}
+
+@keyframes rewardChestPop {
+  0% {
+    scale: 1;
+  }
+
+  55% {
+    scale: 1.18;
+    filter:
+      drop-shadow(0 24px 20px rgba(0, 0, 0, 0.58))
+  }
+
+  100% {
+    scale: 1.05;
   }
 }

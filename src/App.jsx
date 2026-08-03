@@ -6,17 +6,44 @@ const AVATARS = [
   {
     id: "bear",
     name: "Bear",
-    image:"/assets/avatars/bear_front.png",
+    sprites: {
+  normal: {
+    front: "/assets/avatars/bear_front.png",
+    back: "/assets/avatars/bear_back.png",
+  },
+  hat: {
+    front: "/assets/avatars/hat/HATbear_front.png",
+    back: "/assets/avatars/hat/HATbear_back.png",
+  }
+}
   },
   {
     id: "cat",
     name: "Cat",
-    image: "/assets/avatars/cat_front.png",
+    sprites: {
+  normal: {
+    front: "/assets/avatars/cat_front.png",
+    back: "/assets/avatars/cat_back.png",
+  },
+  hat: {
+    front: "/assets/avatars/hat/HATcat_front.png",
+    back: "/assets/avatars/hat/HATcat_back.png",
+  }
+}
   },
   {
     id: "shark",
     name: "Shark",
-    image: "/assets/avatars/shark_front.png",
+    sprites: {
+  normal: {
+    front: "/assets/avatars/shark_front.png",
+    back: "/assets/avatars/shark_back.png",
+  },
+  hat: {
+    front: "/assets/avatars/hat/HATshark_front.png",
+    back: "/assets/avatars/hat/HATshark_back.png",
+  }
+}
   },
 ];
 
@@ -39,10 +66,12 @@ const ART = {
     rareChest: "/assets/rewards/rarechest.png",
     focusBadge: "/assets/rewards/profilebadge.png",
     finalsChest: "/assets/rewards/finalschest.png",
+    coin: "/assets/rewards/coin.png",
   },
   cosmetics: {
     knightHelmet: null,
     royalCrown: null,
+    hat: "/assets/cosmetics/HAT.png",
   },
 };
 
@@ -110,18 +139,21 @@ const arenas = [
 ];
 
 const roadRewards = [
+ {
+  id: "starter-chest",
+  threshold: 250,
+  arena: "starter",
+  type: "chest",
+  title: "Starter Chest",
+  description: "A common chest containing random rewards.",
+  reward: {
+  coins: 100,
+  xp: 25,
+},
+  art: ART.rewards.starterChest,
+},
   {
-    id: "starter-chest",
-    threshold: 250,
-    arena: "starter",
-    type: "chest",
-    title: "Starter Chest",
-    description: "A common chest.",
-    reward: { trophies: 40 },
-    art: ART.rewards.starterChest,
-  },
-  {
-    id: "focus-badge",
+    id: "focus badge",
     threshold: 500,
     arena: "starter",
     type: "badge",
@@ -147,8 +179,11 @@ const roadRewards = [
     type: "chest",
     title: "Uncommon Chest",
     description: "An uncommon chest for reaching midterm season.",
-    reward: { trophies: 75 },
-    art: ART.rewards.UncommonChest,
+    reward: {
+  coins: 100,
+  xp: 25,
+},
+  art: ART.rewards.UncommonChest,
   },
   
   {
@@ -158,8 +193,11 @@ const roadRewards = [
     type: "chest",
     title: "Rare Chest",
     description: "A premium trophy reward.",
-    reward: { trophies: 125 },
-    art: ART.rewards.rareChest,
+     reward: {
+  coins: 100,
+  xp: 25,
+},
+  art: ART.rewards.rareChest,
   },
 
   {
@@ -169,20 +207,23 @@ const roadRewards = [
     type: "chest",
     title: "Finals Chest",
     description: "A milestone chest for reaching the final academic arena.",
-    reward: { trophies: 175, xp: 100 },
-    art: ART.rewards.finalsChest,
+     reward: {
+  coins: 100,
+  xp: 25,
+},
+  art: ART.rewards.finalsChest,
   },
 ];
 
 const shopItems = [
   {
-    id: "knight-helmet",
-    name: "Knight Helmet",
+    id: "hat",
+    name: "Hat",
     category: "hat",
     rarity: "Rare",
     icon: "",
     cost: 350,
-    art: ART.cosmetics.knightHelmet,
+    art: ART.cosmetics.hat,
   },
   {
     id: "royal-crown",
@@ -203,16 +244,24 @@ function App() {
   const [questsError, setQuestsError] = useState("");
   const [playerXP, setPlayerXP] = useState(450);
   const [trophies, setTrophies] = useState(875);
+  const [coins, setCoins] = useState(999999);
   const [selectedAvatarId, setSelectedAvatarId] = useState("bear");
-  const selectedAvatar =
-        AVATARS.find((avatar) => avatar.id === selectedAvatarId) ?? AVATARS[0];
-  const [ownedCosmetics, setOwnedCosmetics] = useState([]);
   const [equippedCosmetics, setEquippedCosmetics] = useState({
     accessory: null,
     hat: null,
     outfit: null,
     theme: null,
   });
+  const selectedAvatar = AVATARS.find((avatar) => avatar.id === selectedAvatarId) ?? AVATARS[0];
+  const selectedAvatarImage =
+  equippedCosmetics.hat === "hat"
+    ? selectedAvatar.sprites.hat.front
+    : selectedAvatar.sprites.normal.front;
+  const [ownedCosmetics, setOwnedCosmetics] = useState([]);
+  const [openingReward, setOpeningReward] = useState(null);
+  const [isChestOpening, setIsChestOpening] = useState(false);
+  const [revealedContents, setRevealedContents] = useState(null);
+
     useEffect(() => {
     async function loadQuests() {
       try {
@@ -258,7 +307,6 @@ function App() {
   const [claimedRewards, setClaimedRewards] = useState([]);
   const [badges, setBadges] = useState([]);
   const [toast, setToast] = useState("");
-
   const xpPerLevel = 500;
   const level = Math.floor(playerXP / xpPerLevel) + 1;
   const currentLevelXP = playerXP % xpPerLevel;
@@ -295,12 +343,12 @@ function App() {
       return;
     }
 
-    if (trophies < item.cost) {
-      showToast("You need more trophies for this item.");
+    if (coins < item.cost) {
+      showToast("You need more coins for this item.");
       return;
     }
 
-    setTrophies((current) => current - item.cost);
+    setCoins((current) => current - item.cost);
     setOwnedCosmetics((current) => [...current, item.id]);
     setEquippedCosmetics((current) => ({ ...current, [item.category]: item.id }));
     showToast(`${item.name} unlocked and equipped.`);
@@ -313,37 +361,90 @@ function App() {
   }
 
   function claimRoadReward(reward) {
-    if (trophies < reward.threshold || claimedRewards.includes(reward.id)) return;
-
-    setClaimedRewards((current) => [...current, reward.id]);
-
-    if (reward.reward.trophies) {
-      setTrophies((current) => current + reward.reward.trophies);
-    }
-    if (reward.reward.xp) {
-      setPlayerXP((current) => current + reward.reward.xp);
-    }
-    if (reward.reward.cosmeticId) {
-      setOwnedCosmetics((current) =>
-        current.includes(reward.reward.cosmeticId)
-          ? current
-          : [...current, reward.reward.cosmeticId]
-      );
-    }
-    if (reward.reward.badge) {
-      setBadges((current) =>
-        current.includes(reward.reward.badge)
-          ? current
-          : [...current, reward.reward.badge]
-      );
-    }
-
-    showToast(`${reward.title} claimed.`);
+  if (
+    trophies < reward.threshold ||
+    claimedRewards.includes(reward.id)
+  ) {
+    return;
   }
 
+  setClaimedRewards((current) => [...current, reward.id]);
+
+  if (reward.type === "chest") {
+  setOpeningReward(reward);
+  setRevealedContents(null);
+  setIsChestOpening(false);
+  return;
+}
+
+  applyImmediateReward(reward);
+}
+
+function startChestOpening() {
+  if (!openingReward || isChestOpening || revealedContents) return;
+
+  setIsChestOpening(true);
+
+  window.setTimeout(() => {
+    revealRoadReward();
+    setIsChestOpening(false);
+  }, 1200);
+}
+
+function revealRoadReward() {
+  if (!openingReward) return;
+
+  const contents = openingReward.reward;
+
+  if (contents.coins) {
+    setCoins((current) => current + contents.coins);
+  }
+
+  if (contents.trophies) {
+    setTrophies((current) => current + contents.trophies);
+  }
+
+  if (contents.xp) {
+    setPlayerXP((current) => current + contents.xp);
+  }
+
+  if (contents.cosmeticId) {
+    setOwnedCosmetics((current) =>
+      current.includes(contents.cosmeticId)
+        ? current
+        : [...current, contents.cosmeticId]
+    );
+  }
+
+  if (contents.badge) {
+    setBadges((current) =>
+      current.includes(contents.badge)
+        ? current
+        : [...current, contents.badge]
+    );
+  }
+
+  setRevealedContents(contents);
+}
+
   return (
-    <div className="app-shell">
+          <div className="app-shell">
       {toast && <div className="toast" role="status">{toast}</div>}
+      
+{openingReward && (
+  <RewardReveal
+    reward={openingReward}
+    revealedContents={revealedContents}
+    isChestOpening={isChestOpening}
+    onOpen={startChestOpening}
+    onClose={() => {
+      setOpeningReward(null);
+      setRevealedContents(null);
+      setIsChestOpening(false);
+    }}
+  />
+)}
+
 
 
       {activeTab !== "road" && (
@@ -362,10 +463,15 @@ function App() {
       <strong>{trophies}</strong>
     </div>
 
-    <div className="resource-pill">
-      <span className="resource-icon">COINS </span>
-      <strong>999999</strong>
-    </div>
+    <div className="resource-pill resource-pill-coins">
+  <img
+    src="/assets/rewards/coin.png"
+    alt="Coins"
+    className="resource-edge-icon"
+  />
+
+  <strong>{coins}</strong>
+</div>
   </div>
 </header>
       )}
@@ -381,6 +487,7 @@ function App() {
           questsError={questsError}
           completeQuest={completeQuest}
           selectedAvatar={selectedAvatar}
+          selectedAvatarImage={selectedAvatarImage}
           currentArena={currentArena}
           trophies={trophies}
           onOpenRoad={() => setActiveTab("road")}
@@ -413,7 +520,7 @@ function App() {
 
         {activeTab === "shop" && (
           <ShopScreen
-            trophies={trophies}
+            coins={coins}
             ownedCosmetics={ownedCosmetics}
             equippedCosmetics={equippedCosmetics}
             onBuy={buyCosmetic}
@@ -432,6 +539,89 @@ function App() {
   );
 }
 
+function RewardReveal({
+  reward,
+  revealedContents,
+  isChestOpening,
+  onOpen,
+  onClose,
+}) {
+  return (
+    <div className="reward-reveal-overlay">
+      <div
+        className={`reward-reveal-panel ${
+          revealedContents ? "reward-opened" : ""
+        }`}
+      >
+        {!revealedContents ? (
+          <>
+            <p className="reward-reveal-label">
+              {isChestOpening ? "OPENING..." : "CHEST UNLOCKED"}
+            </p>
+
+            <button
+              type="button"
+              className="reward-chest-button"
+              onClick={onOpen}
+              disabled={isChestOpening}
+              aria-label={`Open ${reward.title}`}
+            >
+              <img
+                src={reward.art}
+                alt={reward.title}
+                className={`reward-opening-chest ${
+                  isChestOpening ? "is-opening" : ""
+                }`}
+              />
+            </button>
+
+            <h2>{reward.title}</h2>
+
+            <p className="reward-open-instruction">
+              {isChestOpening
+                ? "Opening chest..."
+                : "Click the chest to open"}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="reward-reveal-label">YOU RECEIVED</p>
+
+            <img
+              src={reward.art}
+              alt={reward.title}
+              className="reward-opened-art"
+            />
+
+            <h2>{reward.title}</h2>
+
+            <div className="revealed-reward-values">
+              {revealedContents.coins && (
+                <strong>+{revealedContents.coins} Coins</strong>
+              )}
+
+              {revealedContents.trophies && (
+                <strong>
+                  +{revealedContents.trophies} Trophies
+                </strong>
+              )}
+
+              {revealedContents.xp && (
+                <strong>+{revealedContents.xp} XP</strong>
+              )}
+            </div>
+
+            <button type="button" onClick={onClose}>
+              CONTINUE
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 function ArtSlot({ src, label, className = "" }) {
   if (src) return <img className={`art-slot ${className}`} src={src} alt={label} />;
   return <div className={`art-slot art-placeholder ${className}`} aria-label={`${label} placeholder`}><span>{label}</span></div>;
@@ -447,6 +637,7 @@ function HomeScreen({
   questsError,
   completeQuest,
   selectedAvatar,
+  selectedAvatarImage,
   currentArena,
   trophies,
   onOpenRoad,
@@ -477,7 +668,7 @@ function HomeScreen({
   );
 
   return (
-    <div className="game-home">
+          <div className="game-home">
       <aside className="home-side-panel home-profile-panel">
         <button
           className="player-profile-card"
@@ -486,7 +677,7 @@ function HomeScreen({
         >
           <div className="profile-avatar">
             <img
-              src={selectedAvatar.image}
+              src={selectedAvatarImage}
               alt={`${selectedAvatar.name} avatar`}
               className="home-avatar-image pixel-art"
             />
@@ -544,11 +735,11 @@ function HomeScreen({
 
   {currentArena.art ? (
   <button
-    className="arena-image-button"
-    type="button"
-    onClick={onOpenRoad}
-    aria-label={`Open ${currentArena.name} Trophy Road`}
-  >
+  className="arena-image-button"
+  type="button"
+  onClick={onOpenRoad}
+  aria-label={`Open ${currentArena.name} Trophy Road`}
+>
     <img
       src={currentArena.art}
       alt={currentArena.name}
@@ -868,10 +1059,16 @@ function AvatarScreen({
   avatars,
   selectedAvatarId,
   onSelectAvatar,
+  equippedCosmetics,
 }) {
   const selectedAvatar =
     avatars.find((avatar) => avatar.id === selectedAvatarId) ??
     avatars[0];
+
+  const selectedAvatarImage =
+    equippedCosmetics.hat === "hat"
+      ? selectedAvatar.sprites.hat.front
+      : selectedAvatar.sprites.normal.front;
 
   return (
     <section className="panel-page">
@@ -879,55 +1076,55 @@ function AvatarScreen({
       <h2>Choose Your Avatar</h2>
 
       <div className="avatar-preview">
-        {selectedAvatar.image ? (
-          <img
-            src={selectedAvatar.image}
-            alt={selectedAvatar.name}
-            className="avatar-preview-image pixel-art"
-          />
-        ) : (
-          <span className="art-placeholder">?</span>
-        )}
+        <img
+          src={selectedAvatarImage}
+          alt={selectedAvatar.name}
+          className="avatar-preview-image pixel-art"
+        />
       </div>
 
       <div className="avatar-options">
-        {avatars.map((avatar) => (
-          <button
-            key={avatar.id}
-            disabled={!avatar.image}
-            className={
-              selectedAvatarId === avatar.id
-                ? "avatar-selected"
-                : ""
-            }
-            onClick={() => onSelectAvatar(avatar.id)}
-          >
-            {avatar.image ? (
+        {avatars.map((avatar) => {
+          const avatarImage =
+            equippedCosmetics.hat === "hat"
+              ? avatar.sprites.hat.front
+              : avatar.sprites.normal.front;
+
+          return (
+            <button
+              key={avatar.id}
+              type="button"
+              disabled={!avatar.sprites.normal.front}
+              className={
+                selectedAvatarId === avatar.id
+                  ? "avatar-selected"
+                  : ""
+              }
+              onClick={() => onSelectAvatar(avatar.id)}
+            >
               <img
-                src={avatar.image}
+                src={avatarImage}
                 alt={avatar.name}
                 className="avatar-option-image pixel-art"
               />
-            ) : (
-              <span className="art-placeholder">?</span>
-            )}
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-function ShopScreen({ trophies, ownedCosmetics, equippedCosmetics, onBuy, onEquip }) {
+function ShopScreen({ coins, ownedCosmetics, equippedCosmetics, onBuy, onEquip }) {
   return (
     <section className="panel-page">
-      <div className="section-heading"><div><p className="eyebrow">COSMETIC SHOP</p><h2>Spend Your Trophies</h2></div><span className="shop-balance"> {trophies}</span></div>
+      <div className="section-heading"><div><p className="eyebrow">COSMETIC SHOP</p><h2>Spend Your MataCoins</h2></div><span className="shop-balance"> {coins}</span></div>
       <p className="page-description">Cosmetics are earned through gameplay and purchased only with trophies (gonna replace this with coins).</p>
       <div className="shop-grid expanded-shop-grid">
         {shopItems.map((item) => {
           const owned = ownedCosmetics.includes(item.id);
           const equipped = equippedCosmetics[item.category] === item.id;
-          const affordable = trophies >= item.cost;
+          const affordable = coins >= item.cost;
           return (
             <article className={`shop-card rarity-${item.rarity.toLowerCase()}`} key={item.id}>
               <ArtSlot src={item.art} label={item.name} className="shop-art" />
