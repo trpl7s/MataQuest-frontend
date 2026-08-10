@@ -262,44 +262,121 @@ function App() {
   const [isChestOpening, setIsChestOpening] = useState(false);
   const [revealedContents, setRevealedContents] = useState(null);
 
-    useEffect(() => {
-    async function loadQuests() {
-      try {
-        setQuestsLoading(true);
-        setQuestsError("");
+  const [showAddAssignment, setShowAddAssignment] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [assignmentForm, setAssignmentForm] = useState({
+    courseId: "",
+    name: "",
+    points_possible: "",
+    due_at: "",
+    has_submitted_submissions: false,
+    submission_grade: "",
+    submitted_at: "",
+  });
 
-        const response = await fetch(
-          "http://localhost:3001/api/v1/courses/101/assignments"
-        );
+  const [assignmentSaving, setAssignmentSaving] = useState(false);
+  const [assignmentError, setAssignmentError] = useState("");
 
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
+  async function loadQuests() {
+  try {
+    setQuestsLoading(true);
+    setQuestsError("");
 
-        const assignments = await response.json();
+    const response = await fetch(
+      "http://localhost:3001/api/v1/courses/101/assignments"
+    );
 
-        const formattedQuests = assignments.map((assignment) => ({
-          id: assignment.id,
-          title: assignment.name ?? assignment.title ?? "Untitled Assignment",
-          course: "COMP 380",
-          due: assignment.due_at ?? "No due date",
-          xp: assignment.points_possible ?? 0,
-          trophies: Math.max(
-            10,
-            Math.round((assignment.points_possible ?? 0) / 4)
-          ),
-          completed: false,
-        }));
-
-        setQuests(formattedQuests);
-        console.log("Formatted quests:", formattedQuests);
-      } catch (error) {
-        console.error("Failed to load quests:", error);
-        setQuestsError("Could not load quests from the backend.");
-      } finally {
-        setQuestsLoading(false);
-      }
+    if (!response.ok) {
+      throw new Error(
+        `Request failed with status ${response.status}`
+      );
     }
+
+    const assignments = await response.json();
+
+    const formattedQuests = assignments.map((assignment) => ({
+      id: assignment.id,
+      title:
+        assignment.name ??
+        assignment.title ??
+        "Untitled Assignment",
+      course: "COMP 380",
+      due: assignment.due_at ?? "No due date",
+      xp: assignment.points_possible ?? 0,
+      trophies: Math.max(
+        10,
+        Math.round(
+          (assignment.points_possible ?? 0) / 4
+        )
+      ),
+      completed: false,
+    }));
+
+    setQuests(formattedQuests);
+  } catch (error) {
+    console.error("Failed to load quests:", error);
+    setQuestsError(
+      "Could not load quests from the backend."
+    );
+  } finally {
+    setQuestsLoading(false);
+  }
+}
+
+async function addAssignment(event) {
+  event.preventDefault();
+
+  try {
+    setAssignmentSaving(true);
+    setAssignmentError("");
+
+    const response = await fetch(
+      "http://localhost:3001/api/assignments",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(assignmentForm),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const message =
+        data.details?.join(", ") ??
+        data.error ??
+        "Could not add assignment.";
+
+      throw new Error(message);
+    }
+
+    setShowAddAssignment(false);
+
+    setAssignmentForm({
+      courseId:
+        courses.length > 0
+          ? String(courses[0].id)
+          : "",
+      name: "",
+      points_possible: "",
+      due_at: "",
+      has_submitted_submissions: false,
+      submission_grade: "",
+      submitted_at: "",
+    });
+
+    await loadQuests();
+  } catch (error) {
+    console.error(error);
+    setAssignmentError(error.message);
+  } finally {
+    setAssignmentSaving(false);
+  }
+}
+
+    useEffect(() => {
 
     loadQuests();
   }, []);
@@ -316,6 +393,32 @@ function App() {
     () => arenas.find((arena) => trophies >= arena.min && trophies <= arena.max) ?? arenas[0],
     [trophies]
   );
+
+  async function loadCourses() {
+  try {
+    const response = await fetch(
+      "http://localhost:3001/api/v1/courses"
+    );
+
+    if (!response.ok) {
+      throw new Error("Could not load courses.");
+    }
+
+    const data = await response.json();
+
+    setCourses(data);
+
+    if (data.length > 0) {
+      setAssignmentForm((current) => ({
+        ...current,
+        courseId: String(data[0].id),
+      }));
+    }
+  } catch (error) {
+    console.error(error);
+    setAssignmentError("Could not load courses.");
+  }
+}
 
   function showToast(message) {
     setToast(message);
@@ -337,28 +440,37 @@ function App() {
     showToast(`Quest complete: +${selectedQuest.xp} XP and +${selectedQuest.trophies} trophies`);
   }
 
-  function buyCosmetic(item) {
-    if (ownedCosmetics.includes(item.id)) {
-      equipCosmetic(item);
-      return;
-    }
+ function buyCosmetic(item) {
+  if (ownedCosmetics.includes(item.id)) return;
 
-    if (coins < item.cost) {
-      showToast("You need more coins for this item.");
-      return;
-    }
-
-    setCoins((current) => current - item.cost);
-    setOwnedCosmetics((current) => [...current, item.id]);
-    setEquippedCosmetics((current) => ({ ...current, [item.category]: item.id }));
-    showToast(`${item.name} unlocked and equipped.`);
+  if (coins < item.cost) {
+    showToast("You need more coins for this item.");
+    return;
   }
+
+  setCoins((current) => current - item.cost);
+
+  setOwnedCosmetics((current) => [
+    ...current,
+    item.id,
+  ]);
+}
 
   function equipCosmetic(item) {
-    if (!ownedCosmetics.includes(item.id)) return;
-    setEquippedCosmetics((current) => ({ ...current, [item.category]: item.id }));
-    showToast(`${item.name} equipped.`);
-  }
+  if (!ownedCosmetics.includes(item.id)) return;
+
+  setEquippedCosmetics((current) => ({
+    ...current,
+    [item.category]: item.id
+  }));
+}
+
+  function unequipCosmetic(category) {
+  setEquippedCosmetics((current) => ({
+    ...current,
+    [category]: null,
+  }));
+}
 
   function claimRoadReward(reward) {
   if (
@@ -429,6 +541,229 @@ function revealRoadReward() {
 
   return (
           <div className="app-shell">
+            {showAddAssignment && (
+  <div className="assignment-modal-overlay">
+
+    <form
+      className="assignment-modal"
+      onSubmit={addAssignment}
+    >
+      <div className="assignment-modal-header">
+        <div>
+          <span>QUEST LOG</span>
+          <h2>Add Assignment</h2>
+        </div>
+
+        <button
+          type="button"
+          className="assignment-modal-close"
+          onClick={() =>
+            setShowAddAssignment(false)
+          }
+        >
+          ✕
+        </button>
+      </div>
+
+
+      <label>
+        Course
+
+        <select
+          value={assignmentForm.courseId}
+          onChange={(event) =>
+            setAssignmentForm(
+              (current) => ({
+                ...current,
+                courseId:
+                  event.target.value,
+              })
+            )
+          }
+          required
+        >
+          {courses.map((course) => (
+            <option
+              key={course.id}
+              value={course.id}
+            >
+              {course.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+
+      <label>
+        Assignment Name
+
+        <input
+          type="text"
+          value={assignmentForm.name}
+          onChange={(event) =>
+            setAssignmentForm(
+              (current) => ({
+                ...current,
+                name:
+                  event.target.value,
+              })
+            )
+          }
+          placeholder="Sprint 2 Report"
+          required
+        />
+      </label>
+
+
+      <label>
+        Points Possible
+
+        <input
+          type="number"
+          min="0"
+          step="1"
+          value={
+            assignmentForm.points_possible
+          }
+          onChange={(event) =>
+            setAssignmentForm(
+              (current) => ({
+                ...current,
+                points_possible:
+                  event.target.value,
+              })
+            )
+          }
+          required
+        />
+      </label>
+
+
+      <label>
+        Due Date
+
+        <input
+          type="date"
+          value={
+            assignmentForm.due_at
+          }
+          onChange={(event) =>
+            setAssignmentForm(
+              (current) => ({
+                ...current,
+                due_at:
+                  event.target.value,
+              })
+            )
+          }
+        />
+      </label>
+
+
+      <label className="assignment-checkbox">
+        <input
+          type="checkbox"
+          checked={
+            assignmentForm.has_submitted_submissions
+          }
+          onChange={(event) =>
+            setAssignmentForm(
+              (current) => ({
+                ...current,
+                has_submitted_submissions:
+                  event.target.checked,
+              })
+            )
+          }
+        />
+
+        Already submitted?
+      </label>
+
+
+      {assignmentForm.has_submitted_submissions && (
+        <div className="assignment-submission-fields">
+
+          <label>
+            Grade
+
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={
+                assignmentForm.submission_grade
+              }
+              onChange={(event) =>
+                setAssignmentForm(
+                  (current) => ({
+                    ...current,
+                    submission_grade:
+                      event.target.value,
+                  })
+                )
+              }
+            />
+          </label>
+
+
+          <label>
+            Submitted On
+
+            <input
+              type="date"
+              value={
+                assignmentForm.submitted_at
+              }
+              onChange={(event) =>
+                setAssignmentForm(
+                  (current) => ({
+                    ...current,
+                    submitted_at:
+                      event.target.value,
+                  })
+                )
+              }
+            />
+          </label>
+
+        </div>
+      )}
+
+
+      {assignmentError && (
+        <p className="assignment-modal-error">
+          {assignmentError}
+        </p>
+      )}
+
+
+      <div className="assignment-modal-actions">
+        <button
+          type="button"
+          className="assignment-cancel-button"
+          onClick={() =>
+            setShowAddAssignment(false)
+          }
+        >
+          CANCEL
+        </button>
+
+        <button
+          type="submit"
+          className="assignment-save-button"
+          disabled={assignmentSaving}
+        >
+          {assignmentSaving
+            ? "SAVING..."
+            : "ADD ASSIGNMENT"}
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+)}
       {toast && <div className="toast" role="status">{toast}</div>}
       
 {openingReward && (
@@ -447,8 +782,8 @@ function revealRoadReward() {
 
 
 
-      {activeTab !== "road" && (
-      <header className="game-header">
+      {activeTab === "home" && (
+  <header className="game-header">
   <div className="brand-block">
     <img
       src={ART.logo}
@@ -493,6 +828,7 @@ function revealRoadReward() {
           onOpenRoad={() => setActiveTab("road")}
           onOpenAvatar={() => setActiveTab("avatar")}
           onOpenShop={() => setActiveTab("shop")}
+          onOpenQuestLog={() => setActiveTab("quests")}
           />
         )}
 
@@ -508,27 +844,47 @@ function revealRoadReward() {
           />
         )}
 
+        {activeTab === "quests" && (
+        <QuestLogPage
+          quests={quests}
+          questsLoading={questsLoading}
+          questsError={questsError}
+          completeQuest={completeQuest}
+
+          onClose={() =>
+            setActiveTab("home")
+          }
+
+          onOpenAddAssignment={() => {
+            setAssignmentError("");
+            loadCourses();
+            setShowAddAssignment(true);
+          }}
+        />
+      )}
+
         {activeTab === "avatar" && (
           <AvatarScreen
-            avatars={AVATARS}
-            selectedAvatarId={selectedAvatarId}
-            onSelectAvatar={setSelectedAvatarId}
-            equippedCosmetics={equippedCosmetics}
-            ownedCosmetics={ownedCosmetics}
-          />
+          avatars={AVATARS}
+          selectedAvatarId={selectedAvatarId}
+          onSelectAvatar={setSelectedAvatarId}
+          equippedCosmetics={equippedCosmetics}
+          ownedCosmetics={ownedCosmetics}
+          cosmetics={shopItems}
+          onEquipCosmetic={equipCosmetic}
+          onUnequipCosmetic={unequipCosmetic}
+        />
         )}
 
         {activeTab === "shop" && (
           <ShopScreen
-            coins={coins}
-            ownedCosmetics={ownedCosmetics}
-            equippedCosmetics={equippedCosmetics}
-            onBuy={buyCosmetic}
-            onEquip={equipCosmetic}
-          />
+          coins={coins}
+          ownedCosmetics={ownedCosmetics}
+          onBuy={buyCosmetic}
+        />
         )}
       </main>
-      {activeTab !== "road" && (
+      {activeTab !== "road" && activeTab !== "quests" && (
       <nav className="bottom-nav" aria-label="Main navigation">
         <NavButton icon="" label="Home" active={activeTab === "home"} onClick={() => setActiveTab("home")} />
         <NavButton icon="" label="Avatar" active={activeTab === "avatar"} onClick={() => setActiveTab("avatar")} />
@@ -643,6 +999,7 @@ function HomeScreen({
   onOpenRoad,
   onOpenAvatar,
   onOpenShop,
+  onOpenQuestLog
 }) {
   const remainingQuests = quests.filter((quest) => !quest.completed).length;
   const completedQuests = quests.length - remainingQuests;
@@ -807,43 +1164,6 @@ function HomeScreen({
           </div>
 
         </section>
-
-        <section className="home-quest-preview">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">CANVAS QUEST LOG</p>
-              <h2>Today’s Quests</h2>
-            </div>
-
-            <span className="quest-count">
-              {remainingQuests} remaining
-            </span>
-          </div>
-
-          {questsLoading && (
-            <p className="home-status-message">
-              Loading quests...
-            </p>
-          )}
-
-          {questsError && (
-            <p className="home-status-message home-error-message">
-              {questsError}
-            </p>
-          )}
-
-          {!questsLoading && !questsError && (
-            <div className="quest-list">
-              {quests.slice(0, 3).map((quest) => (
-                <QuestCard
-                  key={quest.id}
-                  quest={quest}
-                  onComplete={completeQuest}
-                />
-              ))}
-            </div>
-          )}
-        </section>
       </section>
 
       <aside className="home-side-panel home-actions-panel">
@@ -875,24 +1195,37 @@ function HomeScreen({
           )}
         </div>
 
-        <div className="weekly-challenge-card">
-          <span className="home-label">WEEKLY CHALLENGE</span>
-          <h3>Complete 5 Quests</h3>
+        <button
+  type="button"
+  className="weekly-challenge-card weekly-challenge-button"
+  onClick={onOpenQuestLog}
+>
+  <span className="home-label">
+    WEEKLY CHALLENGE
+  </span>
 
-          <div className="challenge-progress-track">
-            <div
-              className="challenge-progress-fill"
-              style={{
-                width: `${Math.min(
-                  (completedQuests / 5) * 100,
-                  100
-                )}%`,
-              }}
-            />
-          </div>
+  <h3>Complete 5 Quests</h3>
 
-          <p>{Math.min(completedQuests, 5)} / 5 complete</p>
-        </div>
+  <div className="challenge-progress-track">
+    <div
+      className="challenge-progress-fill"
+      style={{
+        width: `${Math.min(
+          (completedQuests / 5) * 100,
+          100
+        )}%`,
+      }}
+    />
+  </div>
+
+  <div className="weekly-challenge-footer">
+    <p>
+      {Math.min(completedQuests, 5)} / 5 complete
+    </p>
+
+    <strong>VIEW QUESTS →</strong>
+  </div>
+</button>
       </aside>
     </div>
   );
@@ -905,6 +1238,145 @@ function QuestCard({ quest, onComplete }) {
       <div className="reward-panel"><span> +{quest.xp}</span><span> +{quest.trophies}</span></div>
       <button className="complete-button" disabled={quest.completed} onClick={() => onComplete(quest.id)}>{quest.completed ? "Quest Complete" : "Complete Quest"}</button>
     </article>
+  );
+}
+
+function QuestLogPage({
+  quests,
+  questsLoading,
+  questsError,
+  completeQuest,
+  onClose,
+  onOpenAddAssignment,
+}) {
+  const remainingQuests =
+    quests.filter((quest) => !quest.completed).length;
+
+  const completedQuests =
+    quests.length - remainingQuests;
+
+  const weeklyProgress =
+    Math.min((completedQuests / 5) * 100, 100);
+
+  return (
+    <section className="quest-log-page">
+
+      <header className="quest-log-header">
+        <div>
+          <h1>QUESTS</h1>
+        </div>
+
+        <button
+          type="button"
+          className="quest-log-close-button"
+          onClick={onClose}
+        >
+          ✕
+        </button>
+      </header>
+
+
+      <section className="quest-weekly-panel">
+        <div className="quest-weekly-copy">
+          <span>WEEKLY CHALLENGE</span>
+
+          <h2>Complete 5 Quests</h2>
+
+          <p>
+            Complete assignments to finish this week's challenge.
+          </p>
+        </div>
+
+        <div className="quest-weekly-progress">
+          <strong>
+            {Math.min(completedQuests, 5)} / 5
+          </strong>
+
+          <div className="quest-weekly-track">
+            <div
+              className="quest-weekly-fill"
+              style={{
+                width: `${weeklyProgress}%`,
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+
+      <section className="quest-log-content">
+
+        <div className="quest-log-section-heading">
+      <div>
+        <span>CANVAS QUEST LOG</span>
+        <h2>Assignments</h2>
+      </div>
+
+      <div className="quest-log-heading-actions">
+        <strong>
+          {remainingQuests} remaining
+        </strong>
+
+        <button
+          type="button"
+          className="add-assignment-button"
+          onClick={onOpenAddAssignment}
+        >
+          + ADD ASSIGNMENT
+        </button>
+      </div>
+    </div>
+
+
+        {questsLoading && (
+          <p className="quest-log-status">
+            Loading quests...
+          </p>
+        )}
+
+
+        {questsError && (
+          <p className="quest-log-status quest-log-error">
+            {questsError}
+          </p>
+        )}
+
+
+        {!questsLoading &&
+          !questsError &&
+          quests.length === 0 && (
+            <p className="quest-log-status">
+              No assignments available.
+            </p>
+          )}
+
+
+        {!questsLoading &&
+          !questsError &&
+          quests.length > 0 && (
+            <div className="quest-log-list">
+              {quests.map((quest) => (
+                <QuestCard
+                  key={quest.id}
+                  quest={quest}
+                  onComplete={completeQuest}
+                />
+              ))}
+            </div>
+          )}
+
+      </section>
+
+
+      <button
+        type="button"
+        className="quest-log-ok-button"
+        onClick={onClose}
+      >
+        OK
+      </button>
+
+    </section>
   );
 }
 
@@ -1054,13 +1526,18 @@ function TrophyRoadOld({
     </section>
   );
 }
-
 function AvatarScreen({
   avatars,
   selectedAvatarId,
   onSelectAvatar,
   equippedCosmetics,
+  ownedCosmetics,
+  cosmetics,
+  onEquipCosmetic,
+  onUnequipCosmetic,
 }) {
+  const [lockerTab, setLockerTab] = useState("characters");
+
   const selectedAvatar =
     avatars.find((avatar) => avatar.id === selectedAvatarId) ??
     avatars[0];
@@ -1071,68 +1548,243 @@ function AvatarScreen({
       : selectedAvatar.sprites.normal.front;
 
   return (
-    <section className="panel-page">
-      <p className="eyebrow">CUSTOMIZATION</p>
-      <h2>Choose Your Avatar</h2>
+    <section className="locker-page">
 
-      <div className="avatar-preview">
-        <img
-          src={selectedAvatarImage}
-          alt={selectedAvatar.name}
-          className="avatar-preview-image pixel-art"
-        />
+      {/* LEFT SIDE */}
+      <div className="locker-preview">
+        <div className="locker-character-stage">
+          <img
+            src={selectedAvatarImage}
+            alt={selectedAvatar.name}
+            className="locker-character-image pixel-art"
+          />
+        </div>
+
+        <div className="locker-character-info">
+          <span>SELECTED CHARACTER</span>
+          <h2>{selectedAvatar.name}</h2>
+        </div>
       </div>
 
-      <div className="avatar-options">
-        {avatars.map((avatar) => {
-          const avatarImage =
-            equippedCosmetics.hat === "hat"
-              ? avatar.sprites.hat.front
-              : avatar.sprites.normal.front;
 
-          return (
+      {/* RIGHT SIDE */}
+      <div className="locker-selection">
+
+        <div className="locker-heading">
+          <h1>AVATAR</h1>
+        </div>
+
+        <div className="locker-tabs">
+          <button
+            type="button"
+            className={
+              lockerTab === "characters"
+                ? "locker-tab locker-tab-active"
+                : "locker-tab"
+            }
+            onClick={() => setLockerTab("characters")}
+          >
+            CHARACTERS
+          </button>
+
+          <button
+            type="button"
+            className={
+              lockerTab === "cosmetics"
+                ? "locker-tab locker-tab-active"
+                : "locker-tab"
+            }
+            onClick={() => setLockerTab("cosmetics")}
+          >
+            COSMETICS
+          </button>
+        </div>
+
+
+        {/* CHARACTER GRID */}
+        {lockerTab === "characters" && (
+          <div className="locker-grid">
+
+            {avatars.map((avatar) => {
+              const selected =
+                selectedAvatarId === avatar.id;
+
+              const avatarImage =
+                equippedCosmetics.hat === "hat"
+                  ? avatar.sprites.hat.front
+                  : avatar.sprites.normal.front;
+
+              return (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  className={`locker-tile ${
+                    selected ? "locker-tile-selected" : ""
+                  }`}
+                  onClick={() =>
+                    onSelectAvatar(avatar.id)
+                  }
+                >
+                  <img
+                    src={avatarImage}
+                    alt={avatar.name}
+                    className="locker-tile-image pixel-art"
+                  />
+
+                  <span>{avatar.name}</span>
+                </button>
+              );
+            })}
+
+          </div>
+        )}
+
+
+        {/* COSMETIC GRID */}
+        {lockerTab === "cosmetics" && (
+          <div className="locker-grid">
+
+            {/* NONE */}
             <button
-              key={avatar.id}
               type="button"
-              disabled={!avatar.sprites.normal.front}
-              className={
-                selectedAvatarId === avatar.id
-                  ? "avatar-selected"
+              className={`locker-tile ${
+                !equippedCosmetics.hat
+                  ? "locker-tile-selected"
                   : ""
+              }`}
+              onClick={() =>
+                onUnequipCosmetic("hat")
               }
-              onClick={() => onSelectAvatar(avatar.id)}
             >
-              <img
-                src={avatarImage}
-                alt={avatar.name}
-                className="avatar-option-image pixel-art"
-              />
+              <div className="locker-none-icon">
+              </div>
+
+              <span>None</span>
             </button>
-          );
-        })}
+
+
+            {cosmetics.map((item) => {
+              const owned =
+                ownedCosmetics.includes(item.id);
+
+              const equipped =
+                equippedCosmetics[item.category] ===
+                item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`locker-tile ${
+                    equipped
+                      ? "locker-tile-selected"
+                      : ""
+                  } ${
+                    !owned
+                      ? "locker-tile-locked"
+                      : ""
+                  }`}
+                  disabled={!owned}
+                  onClick={() =>
+                    onEquipCosmetic(item)
+                  }
+                >
+                  <ArtSlot
+                    src={item.art}
+                    label={item.name}
+                    className="locker-cosmetic-image"
+                  />
+
+                  <span>{item.name}</span>
+
+                  {!owned && (
+                    <strong className="locker-lock">
+                      LOCKED
+                    </strong>
+                  )}
+                </button>
+              );
+            })}
+
+          </div>
+        )}
+
       </div>
+
     </section>
   );
 }
 
-function ShopScreen({ coins, ownedCosmetics, equippedCosmetics, onBuy, onEquip }) {
+function ShopScreen({
+  coins,
+  ownedCosmetics,
+  onBuy,
+}) {
   return (
-    <section className="panel-page">
-      <div className="section-heading"><div><p className="eyebrow">COSMETIC SHOP</p><h2>Spend Your MataCoins</h2></div><span className="shop-balance"> {coins}</span></div>
-      <p className="page-description">Cosmetics are earned through gameplay and purchased only with trophies (gonna replace this with coins).</p>
-      <div className="shop-grid expanded-shop-grid">
+    <section className="shop-page">
+      <div className="shop-page-header">
+        <div>
+          <h2>SHOP</h2>
+        </div>
+
+        <div className="shop-coin-balance">
+          <img
+            src="/assets/rewards/coin.png"
+            alt="Coins"
+            className="shop-coin-icon"
+          />
+
+          <strong>{coins}</strong>
+        </div>
+      </div>
+
+      <div className="shop-scroll">
         {shopItems.map((item) => {
           const owned = ownedCosmetics.includes(item.id);
-          const equipped = equippedCosmetics[item.category] === item.id;
           const affordable = coins >= item.cost;
+
           return (
-            <article className={`shop-card rarity-${item.rarity.toLowerCase()}`} key={item.id}>
-              <ArtSlot src={item.art} label={item.name} className="shop-art" />
-              <span className="rarity-label">{item.rarity}</span>
-              <h3>{item.name}</h3>
-              <p> {item.cost}</p>
-              <button disabled={!owned && !affordable} onClick={() => owned ? onEquip(item) : onBuy(item)}>
-                {equipped ? "Equipped" : owned ? "Equip" : affordable ? "Buy" : "Need More Trophies"}
+            <article
+              className={`shop-item-card rarity-${item.rarity.toLowerCase()}`}
+              key={item.id}
+            >
+              <div className="shop-item-top">
+                <span className="shop-item-rarity">
+                  {item.rarity}
+                </span>
+
+                <h3>{item.name}</h3>
+              </div>
+
+              <div className="shop-item-art-area">
+                <ArtSlot
+                  src={item.art}
+                  label={item.name}
+                  className={`shop-item-art shop-item-art-${item.id}`}
+                />
+              </div>
+
+              <button
+                type="button"
+                className={`shop-price-button ${
+                  owned ? "shop-owned" : ""
+                }`}
+                disabled={owned || !affordable}
+                onClick={() => onBuy(item)}
+              >
+                {owned ? (
+                  "OWNED"
+                ) : (
+                  <>
+                    <img
+                      src="/assets/rewards/coin.png"
+                      alt=""
+                      className="shop-price-coin"
+                    />
+
+                    <span>{item.cost}</span>
+                  </>
+                )}
               </button>
             </article>
           );
@@ -1141,7 +1793,6 @@ function ShopScreen({ coins, ownedCosmetics, equippedCosmetics, onBuy, onEquip }
     </section>
   );
 }
-
 function StatCard({ icon, value, label }) {
   return <div className="stat-card"><span>{icon}</span><strong>{value}</strong><p>{label}</p></div>;
 }
