@@ -55,7 +55,7 @@ const ART = {
     shark: null,
   },
   arenas: {
-    starter: "assets/arenas/TESTARENA.PNG",
+    starter: "assets/arenas/arena1.png",
     midterm: null,
     finals: null,
   },
@@ -69,41 +69,9 @@ const ART = {
     coin: "/assets/rewards/coin.png",
   },
   cosmetics: {
-    knightHelmet: null,
-    royalCrown: null,
     hat: "/assets/cosmetics/HAT.png",
   },
 };
-
-// const initialQuests = [
-//   {
-//     id: 1,
-//     title: "Assignment 1: Product Vision",
-//     course: "COMP 380",
-//     due: "Tomorrow",
-//     xp: 150,
-//     trophies: 35,
-//     completed: false,
-//   },
-//   {
-//     id: 2,
-//     title: "Assignment 2",
-//     course: "COMP 380",
-//     due: "Tonight",
-//     xp: 75,
-//     trophies: 20,
-//     completed: false,
-//   },
-//   {
-//     id: 3,
-//     title: "Project Proposal",
-//     course: "COMP 380",
-//     due: "Completed",
-//     xp: 100,
-//     trophies: 25,
-//     completed: true,
-//   },
-// ];
 
 const arenas = [
   {
@@ -225,23 +193,29 @@ const shopItems = [
     cost: 350,
     art: ART.cosmetics.hat,
   },
-  {
-    id: "royal-crown",
-    name: "Royal Crown",
-    category: "hat",
-    rarity: "Epic",
-    icon: "",
-    cost: 700,
-    art: ART.cosmetics.royalCrown,
-  },
-
 ];
+
+const TROPHY_POINTS = {
+  bronze: 10,
+  silver: 20,
+  gold: 30,
+};
 
 function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [quests, setQuests] = useState([]);
   const [questsLoading, setQuestsLoading] = useState(true);
   const [questsError, setQuestsError] = useState("");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authMode, setAuthMode] = useState("login");
+  const [authError, setAuthError] = useState("");
+
+  const [authForm, setAuthForm] = useState({
+  username: "",
+  password: "",
+  displayName: "",
+});
   const [playerXP, setPlayerXP] = useState(450);
   const [trophies, setTrophies] = useState(875);
   const [coins, setCoins] = useState(999999);
@@ -277,14 +251,94 @@ function App() {
   const [assignmentSaving, setAssignmentSaving] = useState(false);
   const [assignmentError, setAssignmentError] = useState("");
 
+    async function handleAuth(event) {
+  event.preventDefault();
+
+  try {
+    setAuthError("");
+
+    const endpoint =
+      authMode === "login"
+        ? "/auth/login"
+        : "/auth/register";
+
+    const body =
+      authMode === "login"
+        ? {
+            username: authForm.username,
+            password: authForm.password,
+          }
+        : {
+            username: authForm.username,
+            password: authForm.password,
+            displayName: authForm.displayName,
+          };
+
+    const response = await fetch(
+      `http://localhost:3001${endpoint}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        credentials: "include",
+
+        body: JSON.stringify(body),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ?? "Authentication failed."
+      );
+    }
+
+    setUser(data.user);
+
+    setAuthForm({
+      username: "",
+      password: "",
+      displayName: "",
+    });
+
+  } catch (error) {
+    console.error(error);
+    setAuthError(error.message);
+  }
+}
+
+async function logout() {
+  try {
+    await fetch(
+      "http://localhost:3001/auth/logout",
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
+  } finally {
+    setUser(null);
+    setActiveTab("home");
+  }
+}
+
+
+
   async function loadQuests() {
   try {
     setQuestsLoading(true);
     setQuestsError("");
 
     const response = await fetch(
-      "http://localhost:3001/api/v1/courses/101/assignments"
-    );
+  "http://localhost:3001/api/v1/courses/101/assignments",
+  {
+    credentials: "include",
+  }
+);
 
     if (!response.ok) {
       throw new Error(
@@ -296,19 +350,18 @@ function App() {
 
     const formattedQuests = assignments.map((assignment) => ({
       id: assignment.id,
+      courseId: 101,
+
       title:
         assignment.name ??
         assignment.title ??
         "Untitled Assignment",
+
       course: "COMP 380",
       due: assignment.due_at ?? "No due date",
+
       xp: assignment.points_possible ?? 0,
-      trophies: Math.max(
-        10,
-        Math.round(
-          (assignment.points_possible ?? 0) / 4
-        )
-      ),
+
       completed: false,
     }));
 
@@ -333,12 +386,16 @@ async function addAssignment(event) {
     const response = await fetch(
       "http://localhost:3001/api/assignments",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(assignmentForm),
-      }
+  method: "POST",
+
+  headers: {
+    "Content-Type": "application/json",
+  },
+
+  credentials: "include",
+
+  body: JSON.stringify(assignmentForm),
+}
     );
 
     const data = await response.json();
@@ -375,11 +432,78 @@ async function addAssignment(event) {
     setAssignmentSaving(false);
   }
 }
+    useEffect(() => {
+  async function checkAuth() {
+    try {
+      const response = await fetch(
+        "http://localhost:3001/api/user/me",
+        {
+          credentials: "include",
+        }
+      );
+
+      if (response.status === 401) {
+        setUser(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Could not check login.");
+      }
+
+      const data = await response.json();
+
+      setUser(data.user);
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      setUser(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  checkAuth();
+}, []);
 
     useEffect(() => {
+  if (!user) return;
 
-    loadQuests();
-  }, []);
+  async function loadPlayerProgress() {
+    try {
+      const response = await fetch(
+        "http://localhost:3001/api/user/progress",
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Could not load player progress."
+        );
+      }
+
+      const data = await response.json();
+
+      setPlayerXP(data.totalXP);
+
+    } catch (error) {
+      console.error(
+        "Failed to load player progress:",
+        error
+      );
+    }
+  }
+
+  loadPlayerProgress();
+}, [user]);
+
+
+    useEffect(() => {
+  if (!user) return;
+
+  loadQuests();
+}, [user]);
 
   const [claimedRewards, setClaimedRewards] = useState([]);
   const [badges, setBadges] = useState([]);
@@ -397,8 +521,11 @@ async function addAssignment(event) {
   async function loadCourses() {
   try {
     const response = await fetch(
-      "http://localhost:3001/api/v1/courses"
-    );
+  "http://localhost:3001/api/v1/courses",
+  {
+    credentials: "include",
+  }
+);
 
     if (!response.ok) {
       throw new Error("Could not load courses.");
@@ -426,19 +553,74 @@ async function addAssignment(event) {
     showToast.timer = window.setTimeout(() => setToast(""), 2600);
   }
 
-  function completeQuest(questId) {
-    const selectedQuest = quests.find((quest) => quest.id === questId);
-    if (!selectedQuest || selectedQuest.completed) return;
+ async function completeQuest(questId) {
+  const selectedQuest =
+    quests.find((quest) => quest.id === questId);
+
+  if (!selectedQuest || selectedQuest.completed) {
+    return;
+  }
+
+ try {
+  const response = await fetch(
+    "http://localhost:3001/api/xp/award",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      credentials: "include",
+
+      body: JSON.stringify({
+        courseId: selectedQuest.courseId,
+        assignmentId: selectedQuest.id,
+      }),
+    }
+  );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ?? "Could not complete quest."
+      );
+    }
+
+    const trophyTier =
+      data.awarded.trophy?.toLowerCase();
+
+    const trophyPoints =
+      TROPHY_POINTS[trophyTier] ?? 0;
 
     setQuests((currentQuests) =>
       currentQuests.map((quest) =>
-        quest.id === questId ? { ...quest, completed: true } : quest
+        quest.id === questId
+          ? { ...quest, completed: true }
+          : quest
       )
     );
-    setPlayerXP((currentXP) => currentXP + selectedQuest.xp);
-    setTrophies((currentTrophies) => currentTrophies + selectedQuest.trophies);
-    showToast(`Quest complete: +${selectedQuest.xp} XP and +${selectedQuest.trophies} trophies`);
+
+    // Xavier's backend is the source of truth for XP
+    setPlayerXP(data.totalXP);
+
+    // Frontend converts Bronze/Silver/Gold
+    // into Trophy Road progression points
+    setTrophies(
+      (current) => current + trophyPoints
+    );
+
+    showToast(
+      `Quest complete: +${data.awarded.xp} XP, +${trophyPoints} trophies`
+    );
+
+  } catch (error) {
+    console.error(
+      "Failed to complete quest:",
+      error
+    );
   }
+}
 
  function buyCosmetic(item) {
   if (ownedCosmetics.includes(item.id)) return;
@@ -538,6 +720,28 @@ function revealRoadReward() {
 
   setRevealedContents(contents);
 }
+
+    if (authLoading) {
+  return (
+    <div className="auth-loading">
+      Loading MataQUEST...
+    </div>
+  );
+}
+
+if (!user) {
+  return (
+    <AuthScreen
+      mode={authMode}
+      setMode={setAuthMode}
+      form={authForm}
+      setForm={setAuthForm}
+      error={authError}
+      onSubmit={handleAuth}
+    />
+  );
+}
+
 
   return (
           <div className="app-shell">
@@ -794,7 +998,7 @@ function revealRoadReward() {
 
   <div className="resource-bar">
     <div className="resource-pill">
-      <span className="resource-icon">TROPHIES </span>
+      <span className="resource-icon">🏆</span>
       <strong>{trophies}</strong>
     </div>
 
@@ -813,6 +1017,7 @@ function revealRoadReward() {
       <main>
         {activeTab === "home" && (
           <HomeScreen
+          displayName={user.displayName}
           level={level}
           currentLevelXP={currentLevelXP}
           xpPerLevel={xpPerLevel}
@@ -829,7 +1034,7 @@ function revealRoadReward() {
           onOpenAvatar={() => setActiveTab("avatar")}
           onOpenShop={() => setActiveTab("shop")}
           onOpenQuestLog={() => setActiveTab("quests")}
-          />
+        />
         )}
 
                 {activeTab === "road" && (
@@ -892,6 +1097,119 @@ function revealRoadReward() {
       </nav>
       )}
     </div>
+  );
+}
+
+function AuthScreen({
+  mode,
+  setMode,
+  form,
+  setForm,
+  error,
+  onSubmit,
+}) {
+  const registering = mode === "register";
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <img
+          src={ART.logo}
+          alt="MataQUEST"
+          className="auth-logo"
+        />
+
+        <h1>
+          {registering
+            ? "Create Account"
+            : "Welcome Back"}
+        </h1>
+
+        <form onSubmit={onSubmit}>
+          {registering && (
+            <label>
+              Display Name
+
+              <input
+                type="text"
+                value={form.displayName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    displayName: event.target.value,
+                  }))
+                }
+                placeholder="user"
+              />
+            </label>
+          )}
+
+          <label>
+            Username
+
+            <input
+              type="text"
+              value={form.username}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  username: event.target.value,
+                }))
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Password
+
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  password: event.target.value,
+                }))
+              }
+              minLength={6}
+              required
+            />
+          </label>
+
+          {error && (
+            <p className="auth-error">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-submit"
+          >
+            {registering
+              ? "CREATE ACCOUNT"
+              : "LOGIN"}
+          </button>
+        </form>
+
+        <button
+          type="button"
+          className="auth-switch"
+          onClick={() =>
+            setMode(
+              registering
+                ? "login"
+                : "register"
+            )
+          }
+        >
+          {registering
+            ? "Already have an account? Login"
+            : "New to MataQUEST? Create Account"}
+        </button>
+      </section>
+    </main>
   );
 }
 
@@ -984,6 +1302,7 @@ function ArtSlot({ src, label, className = "" }) {
 }
 
 function HomeScreen({
+  displayName,
   level,
   currentLevelXP,
   xpPerLevel,
@@ -1041,9 +1360,7 @@ function HomeScreen({
           </div>
 
           <div>
-            {/* { <span className="home-label">PLAYER PROFILE</span> */}
-            <h2>COMP380Student</h2>
-            {/* <p>Level {level}</p> */}
+            <h2>{displayName}</h2>
           </div>
         </button>
 
@@ -1067,19 +1384,19 @@ function HomeScreen({
 
         <div className="home-mini-stats">
           <StatCard
-            icon="ICON"
+            icon="📝"
             value={remainingQuests}
             label="Active"
           />
 
           <StatCard
-            icon="ICON"
+            icon="✅"
             value={completedQuests}
             label="Completed"
           />
 
           <StatCard
-            icon="ICON"
+            icon="🔥"
             value="3"
             label="Streak"
           />
@@ -1107,7 +1424,7 @@ function HomeScreen({
   <div className="arena-stage-placeholder">
     <span></span>
     <strong>{currentArena.name}</strong>
-    <small>Add arena artwork here</small>
+    <small>coming soon</small>
   </div>
 )}
 
@@ -1233,7 +1550,7 @@ function HomeScreen({
 function QuestCard({ quest, onComplete }) {
   return (
     <article className={`quest-card ${quest.completed ? "quest-completed" : ""}`}>
-      <div className="quest-icon">{quest.completed ? "-" : "-"}</div>
+      <div className="quest-icon">{quest.completed ? "✅" : "-"}</div>
       <div className="quest-info"><span className="course-tag">{quest.course}</span><h3>{quest.title}</h3><p>Due: {quest.due}</p></div>
       <div className="reward-panel"><span> +{quest.xp}</span><span> +{quest.trophies}</span></div>
       <button className="complete-button" disabled={quest.completed} onClick={() => onComplete(quest.id)}>{quest.completed ? "Quest Complete" : "Complete Quest"}</button>
